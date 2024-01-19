@@ -159,25 +159,12 @@ app.post('/', express.json(), (req, res)=>{
       };
       agent.add(new dfff.Payload(agent.UNSPECIFIED, appData, { sendAsMessage: true, rawPayload: true }));
       }
-// Declare variable nama, telepon and alamat
-    var nama, telepon, alamat, pesanan, jumlah;
-    function askPhoneNumber(agent){
-      nama = agent.context.get("nama_costumer").parameters.person.name;
-      console.log(nama);
-      agent.add(`Oke kak ${nama}, boleh dituliskan nomor handphonenya? Supaya driver kami bisa dengan mudah menghubungi kakak :)`); 
-      } 
-    function askAddress(agent){
-      telepon = agent.context.get("no_telepon").parameters["phone-number"];
-      console.log(telepon);
-      agent.add(`Nomor teleponnya ini ya kak ${telepon}, boleh dituliskan alamat rumahnya kak?`);
-      }
+
     function orderMenu(agent){
-      alamat = agent.context.get("alamat_rumah").parameters.location["street-address"];
       var displayMenu = {
         "richContent": [
           [
             {
-              "subtitle": `Kakak beralamat di ${alamat}, mau pesan menu yang mana nih kak?`,
               "title": "Order Menu",
               "type": "info"
             },
@@ -198,38 +185,32 @@ app.post('/', express.json(), (req, res)=>{
           ]
         ]
       } 
-      console.log(alamat);
       agent.add(new dfff.Payload(agent.UNSPECIFIED, displayMenu, {sendAsMessage: true, rawPayload: true}));
       } 
-    function fixOrder(agent) {
+
+    function fixOrder(agent){
+      var nama = agent.context.get("data_costumer").parameters.person.name;
+      var telepon = agent.context.get("data_costumer").parameters["phone-number"];
+      var alamat = agent.context.get("data_costumer").parameters.location["street-address"];
       var pesanan = agent.context.get("choose_menu").parameters.menu;
       var jumlah = agent.context.get("choose_menu").parameters.quantity;
-      
-      // Check if any of the required variables is undefined
-      if (typeof nama === 'undefined' || typeof telepon === 'undefined' || typeof alamat === 'undefined' || typeof pesanan === 'undefined' || typeof jumlah === 'undefined') {
-          console.error('One or more required variables are undefined. Cannot add data to Firestore.');
-          agent.add('Maaf, terjadi kesalahan dalam memesan. Silakan coba lagi.');
-          return;
-        }
-      
-        console.log(pesanan + ' ' + jumlah);
-        agent.add("Oke kak, silahkan tunggu ya dalam waktu 15-30 menit akan sampai ke rumah kakak! Terima kasih sudah mempercayai kami >_< Selamat makan!");
-      
-        return db.collection("order-db").add({
-          name: nama,
-          phone_number: telepon,
-          address: alamat,
-          order: pesanan,
-          qty: jumlah,
-          time: Date.now()
+  
+      console.log(nama);
+      console.log(telepon);
+      console.log(alamat);
+      console.log(pesanan + ' ' + jumlah);
+      agent.add("Oke kak, silahkan tunggu ya dalam waktu 15-30 menit akan sampai ke rumah kakak! Terima kasih sudah mempercayai kami >_< Selamat makan!");
+      return db.collection("order-db").add({
+        name: nama,
+        phone_number: telepon,
+        home_address: alamat,
+        order: pesanan,
+        qty: jumlah,
+        time: Date.now()
         }).then(ref =>
-          console.log("Order details added to DB")
-        ).catch(error => {
-          console.error('Error adding order details to Firestore:', error);
-          agent.add('Maaf, terjadi kesalahan dalam memesan. Silakan coba lagi.');
-        });
-      }
-      
+          console.log("Order details added to DB"));
+        }
+
     var intentMap = new Map();
     intentMap.set('webhookDemo',demo);
     intentMap.set('customPayloadDemo',customPayloadDemo);
@@ -243,8 +224,6 @@ app.post('/', express.json(), (req, res)=>{
     intentMap.set('Live Music',liveMusic);
     intentMap.set('Delivery Service',deliveryService);
     intentMap.set('App Delivery',appDelivery);
-    intentMap.set('askPhoneNumber',askPhoneNumber);
-    intentMap.set('askAddress',askAddress);
     intentMap.set('orderMenu',orderMenu);
     intentMap.set('fixOrder',fixOrder);
     agent.handleRequest(intentMap);
